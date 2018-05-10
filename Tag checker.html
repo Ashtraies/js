@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Ash">
+
+  <title>Tag checker</title>
+</head>
+
+<body>
+  <input id="input" type="text" placeholder="Please input"></input>
+  <input id="submit" type="button" value="check" onclick="display()"></input>
+  <br> Sample Input, please copy and paste into the input then click 'check'
+  <br>
+  <ol>
+    <li><xmp><B>This<\g>is<B>boldface</B> in <<*> a</B><\6><<d>sentence</xmp></li>
+    <li><xmp><B><C> This should be centred and in boldface, but the tags are wrongly nested </B></C></xmp>
+    </li>
+    <li><xmp><B><C>This should be centred and in boldface, but there isa missing closing tag</C></xmp>
+    </li>
+    <li><xmp><B>This should be in boldface, but there is an extra closing tag</B></C></xmp>
+    </li>
+    <li><xmp>This is sample</B></C></D></xmp>
+    </li>
+    <li><xmp><B><C><D>This is sample</xmp>
+    </li>
+    <li><xmp><A><A><B><C>This is sample</C></A></B></xmp>
+    </li>
+    <li>
+      <xmp><A><B><C>This is sample</C></A></B></D></xmp>
+    </li>
+    <li><xmp><A><B><C>This is sample</D></A></C></E></xmp></li>
+  </ol>
+  <br>
+  <p id="srcP"></p>
+  </br>
+  <p id="resultP"></p>
+</body>
+
+<!-- Please notice that:In this solution, I ignore the case without nesting -->
+<script type="text/javascript">
+  var $ = function (id) {
+    return document.getElementById(id);
+  }
+  var input = $("input");
+  var srcP = $("srcP");
+  var resultP = $("resultP");
+
+  var debug = function (c) {
+    console.log(c);
+  }
+
+  function getAllOpeningTags(input) {
+    //The tag contains only one uppercase letter.
+    var reg = /<[A-Z]>/g;
+    return input.match(reg);
+  }
+
+  function getAllClosingTags(input) {
+    //The tag contains only one uppercase letter.
+    var reg = /<\/[A-Z]>/g;
+    return input.match(reg);
+  }
+
+  //To display a closing tag.
+  function addChar(src) {
+    return "</" + src.substr(1, 2);
+  }
+
+  //The first parameter must be opening tag,
+  //While the second one must be closing tag.
+  function copmare(o, c) {
+    //Get tag name
+    var c1 = o.substr(1, 1);
+    var c2 = c.substr(2, 1);
+    return c1 == c2;
+  }
+
+  //Check and display the result.
+  function display() {
+    resultP.innerText = check();
+  }
+
+  function check() {
+    var text = input.value;
+    srcP.innerText = text;
+
+    var openingTags = getAllOpeningTags(text);
+    var closingTags = getAllClosingTags(text);
+
+    if (openingTags == null && closingTags == null) {
+      return "No tag at all in the paragraph";
+    } else if (openingTags != null && closingTags == null) {
+      var result = "";
+      for (var i = 0; i < openingTags.length; i++) {
+        result += "Expected " + addChar(openingTags[i]) + " found #\n";
+      }
+      if (result.length != 0) {
+        return result;
+      }
+    } else if (openingTags == null && closingTags != null) {
+      var result = "";
+      for (var i = 0; i < closingTags.length; i++) {
+        result += "Expected # found " + closingTags[i] + "\n";
+      }
+      if (result.length != 0) {
+        return result;
+      }
+    } else {
+      //Opening tags count
+      var otc = openingTags.length;
+      //Closeing tags count
+      var ctc = closingTags.length;
+
+      var result = "";
+      var temp = ctc;
+      for (var i = 0; i < otc; i++) {
+        for (var j = ctc - 1; j >= 0; j--) {
+          if (copmare(openingTags[i], closingTags[j])) {
+            if (j == temp) {
+              continue;
+            } else if (j > temp) {
+              //Wrong nesting
+              result += "Expected " + openingTags[i] + " found " + closingTags[0] + "\n";
+            } else {
+              temp = j;
+            }
+            break;
+          } else {
+            //Missing closing tag.
+            if (j == 0) {
+              result += "Expected " + addChar(openingTags[i]) + " found #\n";
+            }
+          }
+        }
+      }
+      //Reverse search to get all extra closing tags.
+      for (var i = ctc - 1; i >= 0; i--) {
+        for (var j = otc - 1; j >= 0; j--) {
+          if (copmare(openingTags[j], closingTags[i])) {
+            break;
+          } else {
+            //Missing opening tag.
+            if (j == 0) {
+              result += "Expected # found " + closingTags[i] + "\n";
+            }
+          }
+        }
+      }
+      if (result.length != 0) {
+        return result;
+      }
+    }
+    return "Correctly tagged paragraph";
+  }
+
+</script>
+
+<style>
+  #input {
+    width: 600px;
+    font-size: 22px;
+  }
+
+  #srcP {
+    color: indigo;
+    font-size: 20px;
+  }
+
+  #resultP {
+    color: darkred;
+    font-size: 20px;
+  }
+
+  li {
+    font-size: 16px;
+  }
+</style>
+
+</html>
